@@ -122,7 +122,7 @@ Campos cobertos: `nome`, `email`, `password`, `administrador` (usuários), `emai
 git init
 git add .
 git commit -m "feat: evolução da suíte — login, produtos, schemas e CI"
-git remote add origin https://github.com/<seu-usuario>/serverest-tests.git
+git remote add origin https://github.com/EdnoBrendo/serverest-tests.git
 git push -u origin main
 ```
 
@@ -132,6 +132,6 @@ Depois do push, o GitHub Actions roda os testes automaticamente. Veja a aba **Ac
 
 ## Bug encontrado
 
-Veja o bug reportado na aba **[Issues](https://github.com/<seu-usuario>/serverest-tests/issues)** do repositório.
+Veja o bug reportado na aba **[Issues](https://github.com/EdnoBrendo/serverest-tests/issues)** do repositório.
 
 > **Resumo:** `DELETE /usuarios/{id}` e `DELETE /produtos/{id}` com ID inexistente retornam **HTTP 200** em vez do esperado **404**. Embora seja um comportamento intencional da ServeRest (idempotência), pode mascarar erros em clientes que dependem do 404 para detectar recursos ausentes.
