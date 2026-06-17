@@ -1,168 +1,137 @@
-# 🚀 Automação de Testes API ServeRest
+[![Testes API ServeRest](https://github.com/<seu-usuario>/serverest-tests/actions/workflows/testes.yml/badge.svg)](https://github.com/<seu-usuario>/serverest-tests/actions/workflows/testes.yml)
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![Pytest](https://img.shields.io/badge/Pytest-7.x-blue)
 
-[![Python](https://img.shields.io/badge/Python-3.9%2B-blue)]()
-[![Pytest](https://img.shields.io/badge/Pytest-8.x-green)]()
-[![Requests](https://img.shields.io/badge/Requests-2.x-orange)]()
-[![API](https://img.shields.io/badge/API-ServeRest-success)]()
+# Automação de Testes — API ServeRest
 
-Projeto de automação de testes para o endpoint **/usuarios** da API ServeRest utilizando **Python, Pytest e Requests**.
-
-## 🎯 Objetivo
-
-Validar os principais fluxos da API de usuários, cobrindo cenários positivos, negativos e comportamentos específicos da aplicação.
+Suíte de testes para os endpoints `/usuarios`, `/login` e `/produtos` da API **ServeRest**, usando **Python + Pytest + Requests**.
 
 ---
 
-## 📂 Estrutura do Projeto
+## Como rodar
 
-```text
+```bash
+# 1. Clone
+git clone https://github.com/EdnoBrendo/serverest-tests.git
+cd serverest-tests
+
+# 2. Ambiente virtual
+python3 -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# 3. Dependências
+pip install -r requirements.txt
+
+# 4. Executar tudo
+pytest
+
+# Rodar apenas um módulo
+pytest tests/test_login.py
+pytest tests/test_produtos.py
+
+# Rodar um teste específico
+pytest -k "test_login_credenciais_corretas"
+```
+
+---
+
+## Estrutura
+
+```
 serverest-tests/
-│
+├── .github/workflows/testes.yml   # CI — GitHub Actions
 ├── tests/
-│   └── test_usuarios.py
-│
-├── utils/
-│   └── helpers.py
-│
-├── conftest.py
+│   ├── test_usuarios.py           # 11 testes (Semana 3, preservado)
+│   ├── test_login.py              #  6 testes
+│   ├── test_produtos.py           # 11 testes
+│   └── test_schemas.py            #  3 testes (Extra 1 — JSON Schema)
+├── utils/helpers.py               # BASE_URL, email_unico(), payloads
+├── conftest.py                    # Fixtures: usuario_criado, admin_token, produto_criado
 ├── pytest.ini
 ├── requirements.txt
-├── README.md
-└── .gitignore
-```
-
-### Responsabilidades
-
-| Arquivo            | Responsabilidade                |
-| ------------------ | ------------------------------- |
-| `test_usuarios.py` | Casos de teste                  |
-| `helpers.py`       | Payloads e geração de dados     |
-| `conftest.py`      | Fixtures compartilhadas         |
-| `pytest.ini`       | Configuração global da execução |
-
----
-
-## ✅ Cobertura de Testes
-
-### GET /usuarios
-
-* Listar usuários
-* Validar retorno da lista
-* Buscar usuário existente
-* Buscar usuário inexistente
-
-### POST /usuarios
-
-* Cadastro válido
-* E-mail duplicado
-* Ausência de e-mail
-* Ausência de nome
-* Ausência de senha
-
-### PUT /usuarios
-
-* Atualização de usuário existente
-* Criação via ID inexistente (upsert)
-
-### DELETE /usuarios
-
-* Exclusão de usuário existente
-* Exclusão de usuário inexistente
-
-**Total: 13 cenários automatizados**
-
----
-
-## ⚙️ Arquitetura Utilizada
-
-### Fixtures
-
-A fixture `created_user` cria um usuário antes da execução do teste e realiza a limpeza automaticamente após sua conclusão.
-
-Benefícios:
-
-* Isolamento entre testes
-* Independência de execução
-* Limpeza automática do ambiente
-
-### Dados Dinâmicos
-
-Os e-mails são gerados dinamicamente através de UUID para evitar conflitos entre execuções.
-
-Exemplo:
-
-```python
-qa_4f4f1d5e@test.com
-```
-
-### Configuração Centralizada
-
-A URL da API é mantida em um único local:
-
-```ini
-[pytest]
-base_url = https://compassuol.serverest.dev
+├── PLANO-DE-TESTES.md
+└── README.md
 ```
 
 ---
 
-## 🚀 Execução
+## Cobertura de testes
 
-### Instalação
+Método baseado no artigo [Como verificar a cobertura de testes da API REST](https://medium.com/revista-dtar/como-verificar-a-cobertura-de-testes-da-api-rest-9e2f745564b) (Nayara Crema).
+
+### Path Coverage — endpoints únicos cobertos
+
+| Endpoint (URI única) | Coberto? |
+|---|---|
+| `/usuarios` | ✅ |
+| `/usuarios/{id}` | ✅ |
+| `/login` | ✅ |
+| `/produtos` | ✅ |
+| `/produtos/{id}` | ✅ |
+| `/carrinhos` | ❌ |
+| `/carrinhos/{id}` | ❌ |
+
+**Path Coverage = 5 / 7 = 71%**
+
+### Operator Coverage — métodos HTTP cobertos
+
+| Operação | Coberta? |
+|---|---|
+| GET /usuarios | ✅ |
+| POST /usuarios | ✅ |
+| PUT /usuarios/{id} | ✅ |
+| DELETE /usuarios/{id} | ✅ |
+| POST /login | ✅ |
+| GET /produtos | ✅ |
+| POST /produtos | ✅ |
+| PUT /produtos/{id} | ✅ |
+| DELETE /produtos/{id} | ✅ |
+| GET /carrinhos | ❌ |
+| POST /carrinhos | ❌ |
+| DELETE /carrinhos/{id} | ❌ |
+
+**Operator Coverage = 9 / 12 = 75%**
+
+### Parameter Coverage — campos obrigatórios testados
+
+Campos cobertos: `nome`, `email`, `password`, `administrador` (usuários), `email`+`password` (login), `nome`, `preco`, `descricao`, `quantidade` (produtos), `Authorization` header.
+
+**Parameter Coverage = ~90%** (parâmetros de query como `?nome=` e `?preco_min=` não foram cobertos)
+
+### Cobertura total estimada
+
+| Critério | Cobertura |
+|---|---|
+| Path Coverage | 71% |
+| Operator Coverage | 75% |
+| Parameter Coverage | ~90% |
+| **Média** | **~79%** |
+
+### O que ficou fora e por quê
+
+| Item | Motivo |
+|---|---|
+| `/carrinhos` | Fora do escopo do desafio desta semana |
+| Filtros por query string (`?nome=`, `?preco=`) | Prioridade baixa; aumentaria muito o volume |
+| Testes de performance | Requer ferramenta dedicada (k6, Locust) |
+
+---
+
+## Subir no GitHub
 
 ```bash
-pip install -r requirements.txt
+git init
+git add .
+git commit -m "feat: evolução da suíte — login, produtos, schemas e CI"
+git remote add origin https://github.com/<seu-usuario>/serverest-tests.git
+git push -u origin main
 ```
 
-### Executar todos os testes
-
-```bash
-pytest
-```
-
-### Executar com relatório HTML
-
-```bash
-pytest --html=reports/report.html --self-contained-html
-```
-
-### Executar um cenário específico
-
-```bash
-pytest -k "nome_do_teste"
-```
-
-### Parar na primeira falha
-
-```bash
-pytest -x
-```
+Depois do push, o GitHub Actions roda os testes automaticamente. Veja a aba **Actions** do repositório.
 
 ---
 
-## 🔧 Tecnologias
+## Bug encontrado
 
-| Tecnologia  | Finalidade              |
-| ----------- | ----------------------- |
-| Python      | Linguagem principal     |
-| Pytest      | Framework de testes     |
-| Requests    | Consumo da API          |
-| Pytest HTML | Relatórios              |
-| UUID        | Geração de dados únicos |
+Veja o bug reportado na aba **[Issues](https://github.com/<seu-usuario>/serverest-tests/issues)** do repositório.
 
----
-
-## 📈 Resultado Esperado
-
-```text
-===================== test session starts =====================
-
-collected 13 items
-
-13 passed
-
-===================== 100% SUCCESS =====================
-```
-
----
-
+> **Resumo:** `DELETE /usuarios/{id}` e `DELETE /produtos/{id}` com ID inexistente retornam **HTTP 200** em vez do esperado **404**. Embora seja um comportamento intencional da ServeRest (idempotência), pode mascarar erros em clientes que dependem do 404 para detectar recursos ausentes.

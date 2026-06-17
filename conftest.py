@@ -1,62 +1,55 @@
-"""
-Configurações e fixtures globais do Pytest.
-
-As fixtures definidas aqui ficam disponíveis para todos os
-arquivos de teste sem necessidade de importação explícita.
-"""
 import pytest
 import requests
-
-from utils.helpers import build_user_payload
-
-
-# ---------------------------------------------------------------------------
-# Fixture: base_url
-# ---------------------------------------------------------------------------
-def pytest_addoption(parser):
-    parser.addini(
-        "base_url",
-        "URL base da API"
-    )
-@pytest.fixture(scope="session")
-def base_url(pytestconfig) -> str:
-    """
-    Retorna a URL base da API lida do pytest.ini.
-    Escopo 'session' → criada uma única vez por execução.
-    """
-    return pytestconfig.getini("base_url")
+from utils.helpers import BASE_URL, payload_usuario, payload_produto
 
 
-# ---------------------------------------------------------------------------
-# Fixture: created_user
-# ---------------------------------------------------------------------------
+# ── Usuário comum ──────────────────────────────────────────────────────────
 
 @pytest.fixture
-def created_user(base_url: str) -> dict: # pyright: ignore[reportInvalidTypeForm]
+def usuario_criado():
+    """Cria um usuário comum e remove ao final do teste."""
+    payload = payload_usuario()
+    r = requests.post(f"{BASE_URL}/usuarios", json=payload)
+    assert r.status_code == 201, f"Falha ao criar usuário: {r.text}"
+    user_id = r.json()["_id"]
+    yield {**payload, "_id": user_id}
+    requests.delete(f"{BASE_URL}/usuarios/{user_id}")
+
+
+# ── Usuário administrador + token ──────────────────────────────────────────
+
+@pytest.fixture
+def admin_token():
     """
-    Cria um usuário real na API antes do teste e o remove após.
-
-    Escopo padrão ('function') → cada teste recebe um usuário
-    diferente, garantindo isolamento completo entre os testes.
-
-    Yields:
-        dict: Dados do usuário criado, incluindo '_id' retornado pela API.
-
-    Teardown:
-        Deleta o usuário ao final do teste, independente de sucesso/falha.
+    Cria um usuário administrador, faz login, retorna o token Bearer
+    e remove o usuário ao final.
     """
-    payload = build_user_payload()
-    response = requests.post(f"{base_url}/usuarios", json=payload)
+    payload = payload_usuario(nome="Admin Teste", admin="true")
+    r = requests.post(f"{BASE_URL}/usuarios", json=payload)
+    assert r.status_code == 201, f"Falha ao criar admin: {r.text}"
+    user_id = r.json()["_id"]
 
-    assert response.status_code == 201, (
-        f"Falha ao criar usuário na fixture. "
-        f"Status: {response.status_code} | Body: {response.text}"
+    login = requests.post(
+        f"{BASE_URL}/login",
+        json={"email": payload["email"], "password": payload["password"]},
     )
+    assert login.status_code == 200, f"Falha no login: {login.text}"
+    token = login.json()["authorization"]
 
-    user_id = response.json().get("_id")
-    user_data = {**payload, "_id": user_id}
+    yield token
 
-    yield user_data
+    requests.delete(f"{BASE_URL}/usuarios/{user_id}")
 
-    # --- Teardown: remove o usuário criado ---
-    requests.delete(f"{base_url}/usuarios/{user_id}")
+
+# ── Produto (depende do token de admin) ────────────────────────────────────
+
+@pytest.fixture
+def produto_criado(admin_token):
+    """Cria um produto como admin e remove ao final do teste."""
+    headers = {"Authorization": admin_token}
+    payload = payload_produto()
+    r = requests.post(f"{BASE_URL}/produtos", json=payload, headers=headers)
+    assert r.status_code == 201, f"Falha ao criar produto: {r.text}"
+    produto_id = r.json()["_id"]
+    yield {**payload, "_id": produto_id}
+    requests.delete(f"{BASE_URL}/produtos/{produto_id}", headers=headers)

@@ -1,52 +1,27 @@
-"""
-Utilitários reutilizáveis para os testes da API ServeRest.
-"""
 import uuid
 
-
-def generate_unique_email() -> str:
-    """
-    Gera um endereço de e-mail único utilizando UUID4.
-    Garante que cada teste trabalhe com um e-mail diferente,
-    eliminando conflitos de dados entre execuções.
-
-    Returns:
-        str: E-mail único no formato 'qa_<uuid>@test.com'.
-    """
-    return f"qa_{uuid.uuid4().hex[:12]}@test.com"
+BASE_URL = "https://compassuol.serverest.dev"
 
 
-def build_user_payload(
-    name: str = "Usuário Teste",
-    email: str = None,
-    password: str = "senha123",
-    admin: str = "false",
-) -> dict:
-    """
-    Monta o payload padrão para criação/atualização de usuário.
-    Recebe parâmetros opcionais para personalizar o payload em
-    cenários de teste específicos (ex.: omitir campo obrigatório).
+def email_unico():
+    """Gera e-mail único com UUID para evitar conflitos entre testes."""
+    return f"qa_{uuid.uuid4().hex[:8]}@test.com"
 
-    Args:
-        name:     Nome do usuário.
-        email:    E-mail do usuário. Se None, gera um único automaticamente.
-        password: Senha do usuário.
-        admin:    Flag de administrador ('true' ou 'false').
 
-    Returns:
-        dict: Payload pronto para ser enviado via requests.
-    """
-    payload = {
-        "password": password,
+def payload_usuario(nome="QA Teste", email=None, admin="false"):
+    return {
+        "nome": nome,
+        "email": email or email_unico(),
+        "password": "senha123",
         "administrador": admin,
     }
 
-    if name is not None:
-        payload["nome"] = name
 
-    if email is not None:
-        payload["email"] = email
-    else:
-        payload["email"] = generate_unique_email()
-
-    return payload
+def payload_produto(nome=None, preco=100, descricao="Produto de teste", quantidade=10):
+    nome = nome or f"Produto {uuid.uuid4().hex[:6]}"
+    return {
+        "nome": nome,
+        "preco": preco,
+        "descricao": descricao,
+        "quantidade": quantidade,
+    }
